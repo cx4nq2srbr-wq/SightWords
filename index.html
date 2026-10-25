@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sight Word Explorer</title>
+    <!-- Include Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@600;800&display=swap');
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f0f8ff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+
+        #app {
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            border: 4px solid #ff9a9e;
+        }
+
+        h1 {
+            font-family: 'Fredoka One', cursive;
+            color: #ff6b81;
+            font-size: 2.5rem;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .level-btn {
+            background-color: #7bed9f;
+            color: #2f3542;
+            border: none;
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 1.2rem;
+            font-weight: 800;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 5px 0 #2ed573;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .level-btn:hover {
+            transform: translateY(2px);
+            box-shadow: 0 3px 0 #2ed573;
+        }
+
+        .level-btn:active {
+            transform: translateY(5px);
+            box-shadow: none;
+        }
+
+        #game-area {
+            display: none;
+        }
+
+        #word-display {
+            font-size: 4rem;
+            font-weight: 800;
+            color: #3742fa;
+            margin: 20px 0;
+            letter-spacing: 2px;
+        }
+
+        .action-btn {
+            background-color: #ff7f50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #ff6348;
+            margin: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .action-btn:active {
+            transform: translateY(5px);
+            box-shadow: none;
+        }
+
+        #spelling-input {
+            font-size: 2rem;
+            padding: 10px;
+            width: 80%;
+            text-align: center;
+            border: 3px solid #dfe4ea;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            font-family: 'Nunito', sans-serif;
+            color: #2f3542;
+        }
+
+        #spelling-input:focus {
+            outline: none;
+            border-color: #7bed9f;
+        }
+
+        #feedback {
+            font-size: 1.5rem;
+            font-weight: bold;
+            height: 40px;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .instruction {
+            font-size: 1.2rem;
+            color: #747d8c;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .lucide {
+            stroke-width: 2.5;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <h1>
+            <i data-lucide="star"></i> 
+            Word Explorer 
+            <i data-lucide="star"></i>
+        </h1>
+        
+        <div id="level-selection">
+            <p class="instruction">
+                <i data-lucide="info"></i> Choose a level to start playing!
+            </p>
+            <button class="level-btn" onclick="startGame(1)">
+                <i data-lucide="eye"></i> Level 1 (See & Say)
+            </button>
+            <button class="level-btn" onclick="startGame(2)">
+                <i data-lucide="eye"></i> Level 2 (See & Say)
+            </button>
+            <button class="level-btn" onclick="startGame(3)">
+                <i data-lucide="headphones"></i> Level 3 (Hear & Spell)
+            </button>
+        </div>
+
+        <div id="game-area">
+            <p id="instruction-text" class="instruction"></p>
+            
+            <!-- See and Say Area -->
+            <div id="see-say-area">
+                <div id="word-display">word</div>
+                <button class="action-btn" id="mic-btn" onclick="startListening()">
+                    <i data-lucide="mic"></i> Tap to Speak
+                </button>
+            </div>
+
+            <!-- Hear and Spell Area -->
+            <div id="hear-spell-area" class="hidden">
+                <button class="action-btn" onclick="speakWord()">
+                    <i data-lucide="volume-2"></i> Hear Word
+                </button><br>
+                <input type="text" id="spelling-input" autocomplete="off" placeholder="Type here...">
+                <br>
+                <button class="action-btn" onclick="checkSpelling()">
+                    <i data-lucide="check"></i> Check Answer
+                </button>
+            </div>
+
+            <div id="feedback"></div>
+            
+            <button class="level-btn" onclick="backToMenu()" style="margin-top: 30px; background-color: #f1f2f6; box-shadow: 0 5px 0 #ced6e0;">
+                <i data-lucide="arrow-left"></i> Menu
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize the icons on page load
+        lucide.createIcons();
+
+        const words = {
+            1: ['the', 'of', 'and', 'a', 'to', 'in', 'is', 'you'], // Easy
+            2: ['make', 'like', 'into', 'time', 'look', 'more'],    // Medium
+            3: ['people', 'number', 'water', 'called', 'write']     // Hard
+        };
+
+        let currentLevel = 1;
+        let currentWordIndex = 0;
+        let currentWord = "";
+
+        // Setup Speech Recognition (Chrome/Edge)
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript.toLowerCase().trim();
+                const cleanTranscript = transcript.replace(/[.,!?]/g, ""); 
+                
+                if (cleanTranscript === currentWord) {
+                    showFeedback('<i data-lucide="check-circle-2"></i> Correct! Great job!', "success");
+                    setTimeout(nextWord, 2000);
+                } else {
+                    showFeedback(`<i data-lucide="x-circle"></i> I heard "${cleanTranscript}". Try again!`, "error");
+                }
+            };
+
+            recognition.onerror = function(event) {
+                showFeedback('<i data-lucide="mic-off"></i> Mic error. Make sure it is allowed!', "error");
+            };
+        }
+
+        function startGame(level) {
+            currentLevel = level;
+            currentWordIndex = 0;
+            document.getElementById('level-selection').style.display = 'none';
+            document.getElementById('game-area').style.display = 'block';
+            loadWord();
+        }
+
+        function loadWord() {
+            document.getElementById('feedback').innerHTML = "";
+            currentWord = words[currentLevel][currentWordIndex];
+
+            const seeSayArea = document.getElementById('see-say-area');
+            const hearSpellArea = document.getElementById('hear-spell-area');
+            const instruction = document.getElementById('instruction-text');
+
+            if (currentLevel === 1 || currentLevel === 2) {
+                seeSayArea.classList.remove('hidden');
+                hearSpellArea.classList.add('hidden');
+                document.getElementById('word-display').innerText = currentWord;
+                instruction.innerHTML = '<i data-lucide="eye"></i> Look at the word, tap the mic, and say it loud!';
+            } else {
+                seeSayArea.classList.add('hidden');
+                hearSpellArea.classList.remove('hidden');
+                document.getElementById('spelling-input').value = "";
+                instruction.innerHTML = '<i data-lucide="headphones"></i> Listen to the word and type the letters!';
+                speakWord();
+            }
+            // Re-render icons for dynamically added HTML
+            lucide.createIcons();
+        }
+
+        function startListening() {
+            if (!recognition) {
+                alert("Speech recognition is not supported in this browser. Please use Chrome.");
+                return;
+            }
+            showFeedback('<i data-lucide="radio"></i> Listening...', "warning");
+            document.getElementById('feedback').style.color = "#ffa502";
+            recognition.start();
+        }
+
+        function speakWord() {
+            const utterance = new SpeechSynthesisUtterance(currentWord);
+            utterance.rate = 0.8;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function checkSpelling() {
+            const input = document.getElementById('spelling-input').value.toLowerCase().trim();
+            if (input === currentWord) {
+                showFeedback('<i data-lucide="check-circle-2"></i> Perfect spelling!', "success");
+                setTimeout(nextWord, 2000);
+            } else {
+                showFeedback('<i data-lucide="x-circle"></i> Oops! Try again.', "error");
+            }
+        }
+
+        function nextWord() {
+            currentWordIndex++;
+            if (currentWordIndex < words[currentLevel].length) {
+                loadWord();
+            } else {
+                document.getElementById('instruction-text').innerHTML = 'Level Complete! <i data-lucide="award"></i>';
+                document.getElementById('see-say-area').classList.add('hidden');
+                document.getElementById('hear-spell-area').classList.add('hidden');
+                document.getElementById('feedback').innerHTML = "";
+                partyPopper();
+                lucide.createIcons();
+            }
+        }
+
+        function showFeedback(htmlContent, type) {
+            const feedbackEl = document.getElementById('feedback');
+            feedbackEl.innerHTML = htmlContent;
+            
+            if (type === 'success') feedbackEl.style.color = '#2ed573';
+            else if (type === 'error') feedbackEl.style.color = '#ff4757';
+            else feedbackEl.style.color = '#ffa502'; // warning/listening color
+            
+            lucide.createIcons();
+        }
+
+        function backToMenu() {
+            document.getElementById('game-area').style.display = 'none';
+            document.getElementById('level-selection').style.display = 'block';
+        }
+
+        function partyPopper() {
+            const feedbackEl = document.getElementById('feedback');
+            feedbackEl.innerHTML = '<i data-lucide="sparkles"></i> WOW! YOU DID IT! <i data-lucide="sparkles"></i>';
+            feedbackEl.style.color = "#ff4757";
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
