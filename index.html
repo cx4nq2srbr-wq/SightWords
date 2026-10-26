@@ -138,28 +138,34 @@
         .lucide { stroke-width: 2.5; }
         .hidden { display: none !important; }
 
-        /* Sound Wave Animation */
+        /* Sound Wave Styles */
         .sound-wave {
             display: none;
             align-items: center;
             justify-content: center;
             gap: 6px;
-            height: 40px;
+            height: 50px;
             margin: 15px auto;
         }
         .sound-wave.active { display: flex; }
+        
         .bar {
             width: 8px;
-            height: 10px;
+            height: 10px; /* Default resting height */
             background-color: #ff4757;
             border-radius: 4px;
+            transition: height 0.05s ease; /* Smooth reaction to voice */
+        }
+
+        /* Fallback animation if mic API fails */
+        .bar.fallback-anim {
             animation: wave 1s ease-in-out infinite;
         }
-        .bar:nth-child(1) { animation-delay: 0.0s; }
-        .bar:nth-child(2) { animation-delay: 0.1s; }
-        .bar:nth-child(3) { animation-delay: 0.2s; }
-        .bar:nth-child(4) { animation-delay: 0.3s; }
-        .bar:nth-child(5) { animation-delay: 0.4s; }
+        .bar.fallback-anim:nth-child(1) { animation-delay: 0.0s; }
+        .bar.fallback-anim:nth-child(2) { animation-delay: 0.1s; }
+        .bar.fallback-anim:nth-child(3) { animation-delay: 0.2s; }
+        .bar.fallback-anim:nth-child(4) { animation-delay: 0.3s; }
+        .bar.fallback-anim:nth-child(5) { animation-delay: 0.4s; }
 
         @keyframes wave {
             0%, 100% { height: 10px; }
@@ -200,11 +206,11 @@
             
             <div id="see-say-area">
                 <div id="word-display">word</div>
-                <button class="action-btn" id="mic-btn" onclick="startListening()">
+                <button class="action-btn" id="mic-btn" onclick="startBothListeners()">
                     <i data-lucide="mic"></i> Tap to Speak
                 </button>
                 
-                <!-- Animated Sound Wave -->
+                <!-- Voice Reactive Sound Wave -->
                 <div class="sound-wave" id="sound-wave">
                     <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
                 </div>
@@ -232,7 +238,6 @@
     <script>
         lucide.createIcons();
 
-        // Expanded Word Lists
         const wordDictionary = {
             1: ['the', 'of', 'and', 'a', 'to', 'in', 'is', 'you', 'that', 'it', 'he', 'was', 'for', 'on', 'are', 'as', 'with', 'his', 'they', 'at', 'be', 'this', 'have', 'from'],
             2: ['make', 'like', 'into', 'time', 'look', 'more', 'write', 'go', 'see', 'number', 'no', 'way', 'could', 'people', 'my', 'than', 'first', 'water', 'been', 'called', 'who', 'am', 'now', 'find'],
@@ -244,14 +249,99 @@
         let currentWordIndex = 0;
         let randomizedWords = [];
         let listeningTimeout = null;
+        let preferredVoice = null;
 
-        // Speech Recognition Setup
+        // --- High-Quality Voice Selection ---
+        function loadPremiumVoices() {
+            const voices = window.speechSynthesis.getVoices();
+            if (voices.length === 0) return;
+
+            // Search for well-enunciated, premium English voices first
+            const idealVoices = ['Samantha', 'Alex', 'Google US English', 'Daniel', 'Karen', 'Fred'];
+            
+            for (let name of idealVoices) {
+                const found = voices.find(v => v.name.includes(name) && v.lang.startsWith('en'));
+                if (found) {
+                    preferredVoice = found;
+                    return;
+                }
+            }
+            // Fallback to any English voice
+            preferredVoice = voices.find(v => v.lang.startsWith('en-US')) || voices.find(v => v.lang.startsWith('en'));
+        }
+
+        // Browsers load voices asynchronously, so we listen for the event
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadPremiumVoices;
+        }
+
+        // --- Voice Visualizer Setup ---
+        let audioContext;
+        let analyser;
+        let visualizerStream;
+        let animationId;
+
+        async function startVisualizer() {
+            try {
+                visualizerStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaStreamSource(visualizerStream);
+                
+                source.connect(analyser);
+                analyser.fftSize = 256;
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                const bars = document.querySelectorAll('.bar');
+
+                function renderFrame() {
+                    animationId = requestAnimationFrame(renderFrame);
+                    analyser.getByteFrequencyData(dataArray);
+
+                    // Distribute frequency data across the 5 bars
+                    const step = Math.floor(bufferLength / bars.length);
+                    for (let i = 0; i < bars.length; i++) {
+                        // Get the volume data (0 to 255)
+                        const volume = dataArray[i * step]; 
+                        // Calculate height (minimum 10px, max ~45px)
+                        const height = 10 + (volume / 255) * 35; 
+                        bars[i].style.height = `${height}px`;
+                    }
+                }
+                renderFrame();
+                
+                // Remove fallback animation just in case
+                bars.forEach(bar => bar.classList.remove('fallback-anim'));
+
+            } catch (err) {
+                console.warn("Real-time visualizer couldn't start. Falling back to CSS animation.", err);
+                // Fallback to the bouncing CSS animation if permissions fail
+                document.querySelectorAll('.bar').forEach(bar => bar.classList.add('fallback-anim'));
+            }
+        }
+
+        function stopVisualizer() {
+            if (animationId) cancelAnimationFrame(animationId);
+            if (visualizerStream) {
+                visualizerStream.getTracks().forEach(track => track.stop());
+            }
+            if (audioContext && audioContext.state !== 'closed') {
+                audioContext.close();
+            }
+            // Reset visual bars
+            document.querySelectorAll('.bar').forEach(bar => {
+                bar.style.height = '10px';
+                bar.classList.remove('fallback-anim');
+            });
+        }
+
+        // --- Speech Recognition Setup ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
         
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
-            recognition.continuous = false; // Best for iOS
+            recognition.continuous = false; 
             recognition.lang = 'en-US';
             recognition.interimResults = false;
             recognition.maxAlternatives = 1;
@@ -280,7 +370,6 @@
             };
         }
 
-        // Helper to shuffle arrays randomly
         function shuffleArray(array) {
             let newArray = [...array];
             for (let i = newArray.length - 1; i > 0; i--) {
@@ -290,19 +379,15 @@
             return newArray;
         }
 
-        // Helper to make iOS recognition much more forgiving
         function isMatch(transcript, target) {
             let spoken = transcript.toLowerCase().replace(/[.,!?]/g, "").trim();
             let targetLower = target.toLowerCase();
             
-            // 1. Exact match
             if (spoken === targetLower) return true;
             
-            // 2. Contains match (if kid says "the word is cat")
             let spokenWords = spoken.split(" ");
             if (spokenWords.includes(targetLower)) return true;
 
-            // 3. Common iOS misinterpretations / homophones for sight words
             const homophones = {
                 'a': ['uh', 'ah', 'hey', 'i'],
                 'to': ['two', 'too'],
@@ -339,7 +424,6 @@
             return false;
         }
 
-        // Navigation
         function selectLevel(level) {
             currentLevel = level;
             document.getElementById('level-selection').classList.remove('active');
@@ -349,11 +433,11 @@
         function selectMode(mode) {
             currentMode = mode;
             currentWordIndex = 0;
-            // Randomize the words for this playthrough!
             randomizedWords = shuffleArray(wordDictionary[currentLevel]);
             
             document.getElementById('mode-selection').classList.remove('active');
             document.getElementById('game-area').classList.add('active');
+            loadPremiumVoices(); // Try fetching voices again just in case
             loadWord();
         }
 
@@ -366,7 +450,6 @@
             if(recognition) recognition.abort();
         }
 
-        // Game Logic
         function loadWord() {
             document.getElementById('feedback').innerHTML = "";
             let currentWord = randomizedWords[currentWordIndex];
@@ -390,42 +473,50 @@
             lucide.createIcons();
         }
 
-        function startListening() {
+        function startBothListeners() {
             if (!recognition) {
                 alert("Speech recognition is not supported in this browser. Please use Safari on iOS or Chrome.");
                 return;
             }
             
             try {
+                // Start speech to text
                 recognition.start();
                 
-                // Show Animation & UI
+                // Start the visual wave effect
+                startVisualizer();
+                
                 document.getElementById('sound-wave').classList.add('active');
                 document.getElementById('mic-btn').classList.add('hidden');
                 showFeedback('<i data-lucide="radio"></i> Listening...', "warning");
                 
-                // Set 6-second timeout
+                // 6-second timeout
                 clearTimeout(listeningTimeout);
                 listeningTimeout = setTimeout(() => {
-                    recognition.stop();
+                    if (recognition) recognition.stop();
                     stopListeningUI();
                     showFeedback('<i data-lucide="clock"></i> Time is up! Tap to try again.', "error");
                 }, 6000);
 
             } catch(e) {
-                // Ignore double-start errors
+                console.warn(e);
             }
         }
 
         function stopListeningUI() {
             clearTimeout(listeningTimeout);
+            stopVisualizer();
             document.getElementById('sound-wave').classList.remove('active');
             document.getElementById('mic-btn').classList.remove('hidden');
         }
 
         function speakWord() {
+            if (!preferredVoice) loadPremiumVoices(); // Final check for good voices
+            
             const utterance = new SpeechSynthesisUtterance(randomizedWords[currentWordIndex]);
-            utterance.rate = 0.75; // Slower for kids
+            if (preferredVoice) utterance.voice = preferredVoice;
+            
+            utterance.rate = 0.8; // Nice and clear
             window.speechSynthesis.speak(utterance);
         }
 
