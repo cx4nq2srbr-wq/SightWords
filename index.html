@@ -30,6 +30,7 @@
             max-width: 500px;
             width: 90%;
             border: 4px solid #ff9a9e;
+            position: relative;
         }
 
         h1 {
@@ -43,7 +44,7 @@
             gap: 10px;
         }
 
-        .level-btn {
+        .menu-btn {
             background-color: #7bed9f;
             color: #2f3542;
             border: none;
@@ -59,53 +60,48 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            width: 80%;
         }
 
-        .level-btn:hover {
-            transform: translateY(2px);
-            box-shadow: 0 3px 0 #2ed573;
-        }
+        .menu-btn.medium { background-color: #ffd32a; box-shadow: 0 5px 0 #ffa801; }
+        .menu-btn.hard { background-color: #ff7f50; box-shadow: 0 5px 0 #ff6348; color: white;}
+        .menu-btn.secondary { background-color: #f1f2f6; box-shadow: 0 5px 0 #ced6e0; color: #2f3542; width: auto; margin-top: 20px;}
 
-        .level-btn:active {
-            transform: translateY(5px);
-            box-shadow: none;
-        }
+        .menu-btn:hover { transform: translateY(2px); box-shadow: 0 3px 0 currentColor; filter: brightness(0.9); }
+        .menu-btn:active { transform: translateY(5px); box-shadow: none; }
 
-        #game-area {
-            display: none;
-        }
+        #level-selection, #mode-selection, #game-area { display: none; }
+        #level-selection.active, #mode-selection.active, #game-area.active { display: block; }
 
         #word-display {
-            font-size: 4rem;
+            font-size: 4.5rem;
             font-weight: 800;
             color: #3742fa;
-            margin: 20px 0;
+            margin: 10px 0;
             letter-spacing: 2px;
         }
 
         .action-btn {
-            background-color: #ff7f50;
+            background-color: #ff4757;
             color: white;
             border: none;
             padding: 15px 30px;
             font-size: 1.5rem;
             border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 5px 0 #ff6348;
+            box-shadow: 0 5px 0 #ff1e34;
             margin: 10px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
         }
-
-        .action-btn:active {
-            transform: translateY(5px);
-            box-shadow: none;
-        }
+        
+        .action-btn.blue { background-color: #1e90ff; box-shadow: 0 5px 0 #0073e6; }
+        .action-btn:active { transform: translateY(5px); box-shadow: none; }
 
         #spelling-input {
-            font-size: 2rem;
+            font-size: 2.5rem;
             padding: 10px;
             width: 80%;
             text-align: center;
@@ -114,26 +110,19 @@
             margin-bottom: 20px;
             font-family: 'Nunito', sans-serif;
             color: #2f3542;
+            text-transform: lowercase;
         }
-
-        #spelling-input:focus {
-            outline: none;
-            border-color: #7bed9f;
-        }
+        #spelling-input:focus { outline: none; border-color: #7bed9f; }
 
         #feedback {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: bold;
-            height: 40px;
+            min-height: 40px;
             margin-top: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-        }
-
-        .hidden {
-            display: none !important;
         }
 
         .instruction {
@@ -146,52 +135,86 @@
             gap: 8px;
         }
         
-        .lucide {
-            stroke-width: 2.5;
+        .lucide { stroke-width: 2.5; }
+        .hidden { display: none !important; }
+
+        /* Sound Wave Animation */
+        .sound-wave {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            height: 40px;
+            margin: 15px auto;
+        }
+        .sound-wave.active { display: flex; }
+        .bar {
+            width: 8px;
+            height: 10px;
+            background-color: #ff4757;
+            border-radius: 4px;
+            animation: wave 1s ease-in-out infinite;
+        }
+        .bar:nth-child(1) { animation-delay: 0.0s; }
+        .bar:nth-child(2) { animation-delay: 0.1s; }
+        .bar:nth-child(3) { animation-delay: 0.2s; }
+        .bar:nth-child(4) { animation-delay: 0.3s; }
+        .bar:nth-child(5) { animation-delay: 0.4s; }
+
+        @keyframes wave {
+            0%, 100% { height: 10px; }
+            50% { height: 35px; }
         }
     </style>
 </head>
 <body>
 
     <div id="app">
-        <h1>
-            <i data-lucide="star"></i> 
-            Word Explorer 
-            <i data-lucide="star"></i>
-        </h1>
+        <h1><i data-lucide="star"></i> Word Explorer <i data-lucide="star"></i></h1>
         
-        <div id="level-selection">
-            <p class="instruction">
-                <i data-lucide="info"></i> Choose a level to start playing!
-            </p>
-            <button class="level-btn" onclick="startGame(1)">
-                <i data-lucide="eye"></i> Level 1 (See & Say)
-            </button>
-            <button class="level-btn" onclick="startGame(2)">
-                <i data-lucide="eye"></i> Level 2 (See & Say)
-            </button>
-            <button class="level-btn" onclick="startGame(3)">
-                <i data-lucide="headphones"></i> Level 3 (Hear & Spell)
+        <!-- STEP 1: Choose Level -->
+        <div id="level-selection" class="active">
+            <p class="instruction"><i data-lucide="bar-chart-2"></i> Choose a difficulty level!</p>
+            <button class="menu-btn" onclick="selectLevel(1)">Level 1 (Easy)</button><br>
+            <button class="menu-btn medium" onclick="selectLevel(2)">Level 2 (Medium)</button><br>
+            <button class="menu-btn hard" onclick="selectLevel(3)">Level 3 (Hard)</button>
+        </div>
+
+        <!-- STEP 2: Choose Mode -->
+        <div id="mode-selection">
+            <p class="instruction"><i data-lucide="gamepad-2"></i> How do you want to play?</p>
+            <button class="menu-btn" onclick="selectMode('see-say')">
+                <i data-lucide="eye"></i> See & Say
+            </button><br>
+            <button class="menu-btn medium" onclick="selectMode('hear-spell')">
+                <i data-lucide="headphones"></i> Hear & Spell
+            </button><br>
+            <button class="menu-btn secondary" onclick="goBack('level-selection')">
+                <i data-lucide="arrow-left"></i> Back
             </button>
         </div>
 
+        <!-- STEP 3: Game Area -->
         <div id="game-area">
             <p id="instruction-text" class="instruction"></p>
             
-            <!-- See and Say Area -->
             <div id="see-say-area">
                 <div id="word-display">word</div>
                 <button class="action-btn" id="mic-btn" onclick="startListening()">
                     <i data-lucide="mic"></i> Tap to Speak
                 </button>
+                
+                <!-- Animated Sound Wave -->
+                <div class="sound-wave" id="sound-wave">
+                    <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                </div>
             </div>
 
-            <!-- Hear and Spell Area -->
             <div id="hear-spell-area" class="hidden">
-                <button class="action-btn" onclick="speakWord()">
+                <button class="action-btn blue" onclick="speakWord()">
                     <i data-lucide="volume-2"></i> Hear Word
                 </button><br>
-                <input type="text" id="spelling-input" autocomplete="off" placeholder="Type here...">
+                <input type="text" id="spelling-input" autocomplete="off" placeholder="type here...">
                 <br>
                 <button class="action-btn" onclick="checkSpelling()">
                     <i data-lucide="check"></i> Check Answer
@@ -200,105 +223,215 @@
 
             <div id="feedback"></div>
             
-            <button class="level-btn" onclick="backToMenu()" style="margin-top: 30px; background-color: #f1f2f6; box-shadow: 0 5px 0 #ced6e0;">
-                <i data-lucide="arrow-left"></i> Menu
+            <button class="menu-btn secondary" onclick="goBack('level-selection')">
+                <i data-lucide="home"></i> Menu
             </button>
         </div>
     </div>
 
     <script>
-        // Initialize the icons on page load
         lucide.createIcons();
 
-        const words = {
-            1: ['the', 'of', 'and', 'a', 'to', 'in', 'is', 'you'], // Easy
-            2: ['make', 'like', 'into', 'time', 'look', 'more'],    // Medium
-            3: ['people', 'number', 'water', 'called', 'write']     // Hard
+        // Expanded Word Lists
+        const wordDictionary = {
+            1: ['the', 'of', 'and', 'a', 'to', 'in', 'is', 'you', 'that', 'it', 'he', 'was', 'for', 'on', 'are', 'as', 'with', 'his', 'they', 'at', 'be', 'this', 'have', 'from'],
+            2: ['make', 'like', 'into', 'time', 'look', 'more', 'write', 'go', 'see', 'number', 'no', 'way', 'could', 'people', 'my', 'than', 'first', 'water', 'been', 'called', 'who', 'am', 'now', 'find'],
+            3: ['long', 'down', 'day', 'did', 'get', 'come', 'made', 'may', 'part', 'over', 'new', 'sound', 'take', 'only', 'little', 'work', 'know', 'place', 'years', 'live', 'back', 'give', 'most', 'very', 'after']
         };
 
         let currentLevel = 1;
+        let currentMode = '';
         let currentWordIndex = 0;
-        let currentWord = "";
+        let randomizedWords = [];
+        let listeningTimeout = null;
 
-        // Setup Speech Recognition (Chrome/Edge)
+        // Speech Recognition Setup
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
         
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
-            recognition.continuous = false;
+            recognition.continuous = false; // Best for iOS
             recognition.lang = 'en-US';
             recognition.interimResults = false;
             recognition.maxAlternatives = 1;
 
             recognition.onresult = function(event) {
-                const transcript = event.results[0][0].transcript.toLowerCase().trim();
-                const cleanTranscript = transcript.replace(/[.,!?]/g, ""); 
+                stopListeningUI();
+                const transcript = event.results[0][0].transcript;
                 
-                if (cleanTranscript === currentWord) {
+                if (isMatch(transcript, randomizedWords[currentWordIndex])) {
                     showFeedback('<i data-lucide="check-circle-2"></i> Correct! Great job!', "success");
                     setTimeout(nextWord, 2000);
                 } else {
-                    showFeedback(`<i data-lucide="x-circle"></i> I heard "${cleanTranscript}". Try again!`, "error");
+                    showFeedback(`<i data-lucide="x-circle"></i> I heard "${transcript}". Try again!`, "error");
                 }
             };
 
             recognition.onerror = function(event) {
-                showFeedback('<i data-lucide="mic-off"></i> Mic error. Make sure it is allowed!', "error");
+                stopListeningUI();
+                if(event.error !== 'aborted') {
+                    showFeedback('<i data-lucide="mic-off"></i> Mic error. Make sure it is allowed!', "error");
+                }
+            };
+
+            recognition.onend = function() {
+                stopListeningUI();
             };
         }
 
-        function startGame(level) {
+        // Helper to shuffle arrays randomly
+        function shuffleArray(array) {
+            let newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        // Helper to make iOS recognition much more forgiving
+        function isMatch(transcript, target) {
+            let spoken = transcript.toLowerCase().replace(/[.,!?]/g, "").trim();
+            let targetLower = target.toLowerCase();
+            
+            // 1. Exact match
+            if (spoken === targetLower) return true;
+            
+            // 2. Contains match (if kid says "the word is cat")
+            let spokenWords = spoken.split(" ");
+            if (spokenWords.includes(targetLower)) return true;
+
+            // 3. Common iOS misinterpretations / homophones for sight words
+            const homophones = {
+                'a': ['uh', 'ah', 'hey', 'i'],
+                'to': ['two', 'too'],
+                'of': ['uhv', 'ov', 'love'],
+                'in': ['en', 'and'],
+                'is': ['his', 'yes'],
+                'you': ['u'],
+                'for': ['four', 'or'],
+                'on': ['an'],
+                'are': ['our', 'r'],
+                'with': ['wif'],
+                'they': ['day'],
+                'be': ['bee'],
+                'have': ['half'],
+                'make': ['mate'],
+                'like': ['light'],
+                'time': ['tome'],
+                'look': ['luke'],
+                'write': ['right'],
+                'see': ['sea', 'c'],
+                'no': ['know'],
+                'way': ['weigh'],
+                'know': ['no'],
+                'new': ['knew'],
+                'some': ['sum'],
+                'one': ['won']
+            };
+
+            if (homophones[targetLower]) {
+                for (let word of spokenWords) {
+                    if (homophones[targetLower].includes(word)) return true;
+                }
+            }
+            return false;
+        }
+
+        // Navigation
+        function selectLevel(level) {
             currentLevel = level;
+            document.getElementById('level-selection').classList.remove('active');
+            document.getElementById('mode-selection').classList.add('active');
+        }
+
+        function selectMode(mode) {
+            currentMode = mode;
             currentWordIndex = 0;
-            document.getElementById('level-selection').style.display = 'none';
-            document.getElementById('game-area').style.display = 'block';
+            // Randomize the words for this playthrough!
+            randomizedWords = shuffleArray(wordDictionary[currentLevel]);
+            
+            document.getElementById('mode-selection').classList.remove('active');
+            document.getElementById('game-area').classList.add('active');
             loadWord();
         }
 
+        function goBack(targetId) {
+            document.getElementById('level-selection').classList.remove('active');
+            document.getElementById('mode-selection').classList.remove('active');
+            document.getElementById('game-area').classList.remove('active');
+            document.getElementById(targetId).classList.add('active');
+            stopListeningUI();
+            if(recognition) recognition.abort();
+        }
+
+        // Game Logic
         function loadWord() {
             document.getElementById('feedback').innerHTML = "";
-            currentWord = words[currentLevel][currentWordIndex];
+            let currentWord = randomizedWords[currentWordIndex];
 
             const seeSayArea = document.getElementById('see-say-area');
             const hearSpellArea = document.getElementById('hear-spell-area');
             const instruction = document.getElementById('instruction-text');
 
-            if (currentLevel === 1 || currentLevel === 2) {
+            if (currentMode === 'see-say') {
                 seeSayArea.classList.remove('hidden');
                 hearSpellArea.classList.add('hidden');
                 document.getElementById('word-display').innerText = currentWord;
-                instruction.innerHTML = '<i data-lucide="eye"></i> Look at the word, tap the mic, and say it loud!';
+                instruction.innerHTML = '<i data-lucide="eye"></i> Look, tap the mic, and say it loud!';
             } else {
                 seeSayArea.classList.add('hidden');
                 hearSpellArea.classList.remove('hidden');
                 document.getElementById('spelling-input').value = "";
-                instruction.innerHTML = '<i data-lucide="headphones"></i> Listen to the word and type the letters!';
+                instruction.innerHTML = '<i data-lucide="headphones"></i> Listen to the word and type it!';
                 speakWord();
             }
-            // Re-render icons for dynamically added HTML
             lucide.createIcons();
         }
 
         function startListening() {
             if (!recognition) {
-                alert("Speech recognition is not supported in this browser. Please use Chrome.");
+                alert("Speech recognition is not supported in this browser. Please use Safari on iOS or Chrome.");
                 return;
             }
-            showFeedback('<i data-lucide="radio"></i> Listening...', "warning");
-            document.getElementById('feedback').style.color = "#ffa502";
-            recognition.start();
+            
+            try {
+                recognition.start();
+                
+                // Show Animation & UI
+                document.getElementById('sound-wave').classList.add('active');
+                document.getElementById('mic-btn').classList.add('hidden');
+                showFeedback('<i data-lucide="radio"></i> Listening...', "warning");
+                
+                // Set 6-second timeout
+                clearTimeout(listeningTimeout);
+                listeningTimeout = setTimeout(() => {
+                    recognition.stop();
+                    stopListeningUI();
+                    showFeedback('<i data-lucide="clock"></i> Time is up! Tap to try again.', "error");
+                }, 6000);
+
+            } catch(e) {
+                // Ignore double-start errors
+            }
+        }
+
+        function stopListeningUI() {
+            clearTimeout(listeningTimeout);
+            document.getElementById('sound-wave').classList.remove('active');
+            document.getElementById('mic-btn').classList.remove('hidden');
         }
 
         function speakWord() {
-            const utterance = new SpeechSynthesisUtterance(currentWord);
-            utterance.rate = 0.8;
+            const utterance = new SpeechSynthesisUtterance(randomizedWords[currentWordIndex]);
+            utterance.rate = 0.75; // Slower for kids
             window.speechSynthesis.speak(utterance);
         }
 
         function checkSpelling() {
             const input = document.getElementById('spelling-input').value.toLowerCase().trim();
-            if (input === currentWord) {
+            if (input === randomizedWords[currentWordIndex]) {
                 showFeedback('<i data-lucide="check-circle-2"></i> Perfect spelling!', "success");
                 setTimeout(nextWord, 2000);
             } else {
@@ -308,14 +441,16 @@
 
         function nextWord() {
             currentWordIndex++;
-            if (currentWordIndex < words[currentLevel].length) {
+            if (currentWordIndex < randomizedWords.length) {
                 loadWord();
             } else {
                 document.getElementById('instruction-text').innerHTML = 'Level Complete! <i data-lucide="award"></i>';
                 document.getElementById('see-say-area').classList.add('hidden');
                 document.getElementById('hear-spell-area').classList.add('hidden');
-                document.getElementById('feedback').innerHTML = "";
-                partyPopper();
+                
+                const feedbackEl = document.getElementById('feedback');
+                feedbackEl.innerHTML = '<i data-lucide="sparkles"></i> WOW! YOU DID IT! <i data-lucide="sparkles"></i>';
+                feedbackEl.style.color = "#ff4757";
                 lucide.createIcons();
             }
         }
@@ -326,20 +461,8 @@
             
             if (type === 'success') feedbackEl.style.color = '#2ed573';
             else if (type === 'error') feedbackEl.style.color = '#ff4757';
-            else feedbackEl.style.color = '#ffa502'; // warning/listening color
+            else feedbackEl.style.color = '#ffa502'; 
             
-            lucide.createIcons();
-        }
-
-        function backToMenu() {
-            document.getElementById('game-area').style.display = 'none';
-            document.getElementById('level-selection').style.display = 'block';
-        }
-
-        function partyPopper() {
-            const feedbackEl = document.getElementById('feedback');
-            feedbackEl.innerHTML = '<i data-lucide="sparkles"></i> WOW! YOU DID IT! <i data-lucide="sparkles"></i>';
-            feedbackEl.style.color = "#ff4757";
             lucide.createIcons();
         }
     </script>
